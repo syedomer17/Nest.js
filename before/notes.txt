@@ -5,3 +5,10 @@ A class is a blueprint for creating objects. It defines properties (data) and me
 📘 What is a Constructor?
 A constructor is a special method in a class that runs automatically when you create a new object from the class. It’s used to initialize values.
 
+✅ 2. Access Modifiers (public, private, readonly)
+These define who can access a class’s properties or methods.
+
+Modifier	Meaning
+public	(default) Accessible anywhere
+private	Accessible only inside the class
+readonly	Value cannot be changed after initialization
