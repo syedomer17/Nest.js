@@ -12,3 +12,6 @@ Modifier	Meaning
 public	(default) Accessible anywhere
 private	Accessible only inside the class
 readonly	Value cannot be changed after initialization
+
+✅ 3. Generics (<T>)
+Generics let you create reusable components or functions that work with any data type.
