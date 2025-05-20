@@ -20,3 +20,6 @@ Generics let you create reusable components or functions that work with any data
 A decorator is a special function used to add metadata or modify classes, methods, or properties. In NestJS, you’ll see them everywhere (e.g., @Controller(), @Get()).
 
 Think of a decorator like a label or wrapper that gives extra behavior to something.
+
+✅ 5. Classes and Inheritance
+You can extend a class using the extends keyword — it helps reuse logic.
