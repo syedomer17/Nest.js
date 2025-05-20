@@ -15,3 +15,8 @@ readonly	Value cannot be changed after initialization
 
 ✅ 3. Generics (<T>)
 Generics let you create reusable components or functions that work with any data type.
+
+✅ 4. Decorators (Used in NestJS)
+A decorator is a special function used to add metadata or modify classes, methods, or properties. In NestJS, you’ll see them everywhere (e.g., @Controller(), @Get()).
+
+Think of a decorator like a label or wrapper that gives extra behavior to something.
