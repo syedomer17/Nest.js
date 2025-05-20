@@ -1,0 +1,7 @@
+✅ 1. Classes and Constructors
+📘 What is a Class?
+A class is a blueprint for creating objects. It defines properties (data) and methods (functions).
+
+📘 What is a Constructor?
+A constructor is a special method in a class that runs automatically when you create a new object from the class. It’s used to initialize values.
+
