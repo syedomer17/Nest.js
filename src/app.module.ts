@@ -1,9 +1,11 @@
 // src/app.module.ts
-import { Module, Logger } from '@nestjs/common';
+import { Module, Logger, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { UserModule } from './user/user.module';
 import mongoose from 'mongoose';
+
+import { UserModule } from './user/user.module';
+import { LoggerMiddleware } from './logger/logger.middleware';
 
 @Module({
   imports: [
@@ -19,7 +21,6 @@ import mongoose from 'mongoose';
           throw new Error('❌ MONGODB_URI not defined');
         }
 
-        // Event listeners
         mongoose.connection.on('connected', () => {
           Logger.log('✅ MongoDB connected');
         });
@@ -36,7 +37,6 @@ import mongoose from 'mongoose';
           Logger.error(`❌ MongoDB error: ${err}`);
         });
 
-        // Connect with retry options
         await mongoose.connect(uri, {
           serverSelectionTimeoutMS: 5000,
           socketTimeoutMS: 45000,
@@ -45,7 +45,14 @@ import mongoose from 'mongoose';
         return { uri };
       },
     }),
+
     UserModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(LoggerMiddleware)
+      .forRoutes('*'); // applies to all routes
+  }
+}
