@@ -3,9 +3,8 @@ import { Module, Logger, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
+import { LoggerMidddleware } from './middleware/logger.middleware';
 
-import { UserModule } from './user/user.module';
-import { LoggerMiddleware } from './logger/logger.middleware';
 
 @Module({
   imports: [
@@ -45,14 +44,12 @@ import { LoggerMiddleware } from './logger/logger.middleware';
         return { uri };
       },
     }),
-
-    UserModule,
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(LoggerMiddleware)
+      .apply(LoggerMidddleware)
       .forRoutes('*'); // applies to all routes
   }
 }
