@@ -1,3 +1,4 @@
+// auth.module.ts
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
@@ -10,12 +11,16 @@ import { JwtStrategy } from './jwt.strategy';
 
 import { User, UserSchema } from './schemas/user.schema';
 import { RefreshToken, RefreshTokenSchema } from './schemas/refresh-token.schema';
+import { ResetToken, ResetTokenSchema } from './schemas/reset-token.schema'; // ✅ Import
+
+import { MailService } from 'src/service/mail.service';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: RefreshToken.name, schema: RefreshTokenSchema },
+      { name: ResetToken.name, schema: ResetTokenSchema }, // ✅ Add ResetToken
     ]),
     PassportModule,
     JwtModule.registerAsync({
@@ -23,12 +28,12 @@ import { RefreshToken, RefreshTokenSchema } from './schemas/refresh-token.schema
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '1h' }, // customize token expiry
+        signOptions: { expiresIn: '1h' },
       }),
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService], // export if used in other modules
+  providers: [AuthService, JwtStrategy, MailService],
+  exports: [AuthService],
 })
 export class AuthModule {}

@@ -10,6 +10,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
 import config from './config/config';
+import { MailModule } from './service/mail.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import config from './config/config';
       global: true,
     }),
     AuthModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

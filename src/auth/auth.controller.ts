@@ -16,6 +16,8 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -41,30 +43,44 @@ export class AuthController {
 
   //POST /auth/change-password  - change password
   @UseGuards(AuthGuard('jwt'))
-@Put('change-password')
-async changePassword(
-  @Body() changePasswordDto: ChangePasswordDto,
-  @Req() req: Request & { user?: any }, // user is injected by the JWT strategy
-) {
-  if (!req.user || !req.user.userId) {
-    throw new UnauthorizedException('User ID missing from request');
+  @Put('change-password')
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @Req() req: Request & { user?: any }, // user is injected by the JWT strategy
+  ) {
+    if (!req.user || !req.user.userId) {
+      throw new UnauthorizedException('User ID missing from request');
+    }
+
+    const userId = req.user.userId;
+
+    const result = await this.authService.changePassword(
+      userId,
+      changePasswordDto.oldPassword,
+      changePasswordDto.newPassword,
+    );
+
+    if (!result) {
+      throw new UnauthorizedException('Wrong credentials');
+    }
+
+    return {
+      statusCode: 200,
+      message: 'Password changed successfully',
+    };
+  }
+  
+  @Post('forgot-password')
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto){
+    return this.authService.forgotPassword(forgotPasswordDto.email);
   }
 
-  const userId = req.user.userId;
-
-  const result = await this.authService.changePassword(
-    userId,
-    changePasswordDto.oldPassword,
-    changePasswordDto.newPassword,
-  );
-
-  if (!result) {
-    throw new UnauthorizedException('Wrong credentials');
+  @Put('reset-password')
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    await this.authService.resetPassword(
+      resetPasswordDto.newPassword,
+      resetPasswordDto.resetToken,
+    );
+    return { message: 'Password reset successfully' };
   }
-
-  return {
-    statusCode: 200,
-    message: 'Password changed successfully',
-  };
-}
 }

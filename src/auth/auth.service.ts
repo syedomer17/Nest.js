@@ -3,6 +3,7 @@ import {
   Injectable,
   UnauthorizedException,
   NotFoundException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { signupDto } from './dto/signup.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -13,6 +14,9 @@ import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { RefreshToken } from './schemas/refresh-token.schema';
 import { v4 as uuidv4 } from 'uuid';
+import { nanoid } from 'nanoid';
+import { ResetToken } from './schemas/reset-token.schema';
+import { MailService } from 'src/service/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +25,9 @@ export class AuthService {
     private jwtService: JwtService,
     @InjectModel(RefreshToken.name)
     private RefreshTokenModel: Model<RefreshToken>,
+    @InjectModel(ResetToken.name)
+    private ResetTokenModel: Model<ResetToken>,
+    private mailService: MailService,
   ) {}
 
   // Handle user signup
@@ -132,6 +139,55 @@ export class AuthService {
 
     return { message: 'Password changed successfully' };
   }
+
+  async forgotPassword(email: string){
+    //check that user exits 
+    const user = await this.UserModel.findOne({email});
+
+     //if user exists, generate password reset like
+    if (user) {
+      const expiryDate = new Date();
+      expiryDate.setHours(expiryDate.getHours() + 3)
+
+      const resetToken = nanoid(64)
+      await this.ResetTokenModel.create({
+        token: resetToken,
+        userId: user._id,
+       expiryDate
+      })
+      // send the link to the user by email (using nodemailer/SES etc...)
+      this.mailService.sendPasswordResetEmail(email,resetToken);
+    }
+
+    return {message : "If this user exists, they will receive an email!"};
+  }
+
+  async resetPassword(newPassword: string, resetToken: string) {
+  // Find a valid reset token document in ResetToken collection
+  const token = await this.ResetTokenModel.findOneAndDelete({
+    token: resetToken,
+    expiryDate: { $gte: new Date() },
+  });
+
+  if (!token) {
+    throw new UnauthorizedException('Invalid or expired reset token');
+  }
+
+  // Find user associated with the token
+  const user = await this.UserModel.findById(token.userId);
+  if (!user) {
+    throw new InternalServerErrorException('User not found');
+  }
+
+  // Hash new password and save
+  user.password = await bcrypt.hash(newPassword, 10);
+  await user.save();
+
+  // Optionally remove the used reset token
+  // await this.ResetTokenModel.deleteOne({ _id: token._id });
+
+  return { message: 'Password reset successfully!' };
+}
 
   // Refresh access token using a valid refresh token
   async refreshToken(refreshToken: string) {
