@@ -7,6 +7,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport'; // <-- ADD THIS
+import { JwtStrategy } from './auth/jwt.strategy'; // <-- ADD THIS (make sure you have this file)
 import config from './config/config';
 
 @Module({
@@ -24,7 +26,8 @@ import config from './config/config';
       inject: [ConfigService],
       global: true,
     }),
-    ConfigModule.forRoot({ isGlobal: true }),
+    // Remove duplicate ConfigModule.forRoot() - your original had this duplicated, remove it:
+    // ConfigModule.forRoot({ isGlobal: true }),  <-- REMOVE THIS LINE
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -45,15 +48,14 @@ import config from './config/config';
         return { uri };
       },
     }),
+    PassportModule.register({ defaultStrategy: 'jwt' }), // <-- ADD THIS LINE
     AuthModule,
   ],
   controllers: [AppController],
-  providers : [AppService]
+  providers: [AppService, JwtStrategy], // <-- ADD JwtStrategy here
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(LoggerMiddleware)
-      .forRoutes({ path: '*', method: RequestMethod.ALL }); // ✅ Fix here
+    consumer.apply(LoggerMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL }); // ✅ Fix here
   }
 }

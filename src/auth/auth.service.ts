@@ -36,11 +36,20 @@ export class AuthService {
     const hashPassword = await bcrypt.hash(password, 10);
 
     // Create and save new user
-    await this.UserModel.create({
+    const newUser = await this.UserModel.create({
       name,
       email,
       password: hashPassword,
     });
+
+    return {
+      message: 'Signup successful!',
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+      },
+    };
   }
 
   // Handle user login
@@ -60,11 +69,16 @@ export class AuthService {
     }
 
     // Return JWT and refresh token
-    const tokens =  await this.generateUserToken(user._id as string);
-    return{
+    const tokens = await this.generateUserToken(user._id as string);
+    return {
+      message: 'Login successful!',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
       ...tokens,
-      userId: user._id
-    }
+    };
   }
 
   // Generate access and refresh tokens
@@ -85,19 +99,20 @@ export class AuthService {
   }
 
   // Store refresh token with expiry date
-  async storeRefreshToken(token: string, userId: string) {
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + 3); // expires in 3 days
+async storeRefreshToken(token: string, userId: string) {
+  const expiryDate = new Date();
+  expiryDate.setDate(expiryDate.getDate() + 3); // 3 days
 
-    await this.RefreshTokenModel.create({
-      token,
-      userId,
-      expiryDate,
-    });
-  }
+  await this.RefreshTokenModel.updateOne(
+    { userId },
+    { $set: { token, userId, expiryDate } },
+    { upsert: true }
+  );
+}
+
 
   // Refresh access token using a valid refresh token
-  async refreshToken(refreshToken: string) {
+ async refreshToken(refreshToken: string) {
     // Check if token exists and is not expired
     const token = await this.RefreshTokenModel.findOneAndDelete({
       token: refreshToken,
