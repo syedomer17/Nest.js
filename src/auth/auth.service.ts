@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
 import { signupDto } from './dto/signup.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -99,20 +100,41 @@ export class AuthService {
   }
 
   // Store refresh token with expiry date
-async storeRefreshToken(token: string, userId: string) {
-  const expiryDate = new Date();
-  expiryDate.setDate(expiryDate.getDate() + 3); // 3 days
+  async storeRefreshToken(token: string, userId: string) {
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 3); // 3 days
 
-  await this.RefreshTokenModel.updateOne(
-    { userId },
-    { $set: { token, userId, expiryDate } },
-    { upsert: true }
-  );
-}
+    await this.RefreshTokenModel.updateOne(
+      { userId },
+      { $set: { token, userId, expiryDate } },
+      { upsert: true },
+    );
+  }
 
+  // change passsword
+  async changePassword(userId, oldPassword: string, newPassword: string) {
+    // find the user
+    const user = await this.UserModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    //compare the old password with the password in db
+    const passwordMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!passwordMatch) {
+      throw new UnauthorizedException('Wrong credentials');
+    }
+
+    // chanage the user's password (Don't forget to Hash it!!)
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    return true;
+
+    return { message: 'Password changed successfully' };
+  }
 
   // Refresh access token using a valid refresh token
- async refreshToken(refreshToken: string) {
+  async refreshToken(refreshToken: string) {
     // Check if token exists and is not expired
     const token = await this.RefreshTokenModel.findOneAndDelete({
       token: refreshToken,

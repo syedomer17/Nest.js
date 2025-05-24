@@ -1,16 +1,15 @@
-// app.controller.ts
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { Request } from 'express';
+import { User } from './auth/decorators/user.decorator';
 
-@UseGuards(AuthGuard('jwt'))
 @Controller()
 export class AppController {
+  @UseGuards(AuthGuard('jwt'))
   @Get()
-  someProtectedRoute(@Req() req: Request) {
+  someProtectedRoute(@User() user: any) {
     return {
       message: 'Accessed Resource',
-      userId: (req.user as any)?._id,
+      user, // user will contain userId, username, etc. based on your JWT strategy validate()
     };
   }
 }

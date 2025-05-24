@@ -1,30 +1,46 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
+// src/common/guards/authentication.guard.ts
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Observable } from 'rxjs';
 import { Request } from 'express';
 
+interface AuthRequest extends Request {
+  userId?: string;
+}
+
 @Injectable()
 export class AuthenticationGuard implements CanActivate {
-  constructor(private jwtService: JwtService){}
+  constructor(private jwtService: JwtService) {}
+
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<AuthRequest>();
     const token = this.extractTokenFromHeader(request);
 
-    if(!token){
-      throw new UnauthorizedException('Invalid Token')
+    if (!token) {
+      throw new UnauthorizedException('Token not found');
     }
+
     try {
-      const playload = this.jwtService.verify(token)
-      request.userId = playload.userId
+      const payload = this.jwtService.verify(token);
+      request.userId = payload.userId; // safely add userId
     } catch (error) {
-      Logger.error(error.message)
-      throw new UnauthorizedException('Invalid Token')
+      Logger.error(`JWT Verification Error: ${error.message}`);
+      throw new UnauthorizedException('Invalid or expired token');
     }
-     return true;
+
+    return true;
   }
+
   private extractTokenFromHeader(request: Request): string | undefined {
-    return request.headers.authorization?.split(' ')[1];
+    const authHeader = request.headers.authorization;
+    return authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : undefined;
   }
 }
